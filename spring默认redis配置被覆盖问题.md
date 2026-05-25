@@ -1,0 +1,1 @@
+当自定义RedisConnectionFactory bean后且使用的自定义配置，凡是按类型注入的地方，会导致默认的redisTemplate直接使用这个连接工厂，而没有使用spring默认redis配置的连接工厂
