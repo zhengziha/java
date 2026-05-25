@@ -668,480 +668,223 @@
   - 死信队列：重试 16 次后进入 DLQ
   - 事务消息：Half Message → 本地事务 → Commit/Rollback → 回查
 
-  - MyBatis
-    - jdbc
-    - 源码理解
-      - 映射器解析
-      - sql语句执行
-      - 对象映射
-      - SqlSessionFactory
-        - 创建SqlSession对象，是MyBatis的核心组件之一
-        - 线程安全的，单例模式
-      - SqlSession
-        - SqlSession的生命周期
-          - SqlSession的生命周期是从它的创建到关闭。SqlSession的创建可以通过SqlSessionFactory来创建，一般情况下，我们在需要访问数据库的时候，就会创建一个SqlSession对象。当SqlSession对象不再使用时，应该将其关闭
-        - SqlSession的作用
-          - SqlSession封装了对数据库的操作，包括数据的插入、更新、删除和查询等操作。通过SqlSession可以执行Mapper中定义的方法，并将执行结果返回给应用程序。SqlSession还提供了事务管理的支持
-        - SqlSession的管理
-          - 在MyBatis中，SqlSession的管理是由SqlSessionFactory来管理的。SqlSessionFactory可以通过配置文件或者Java代码来创建，每个应用程序通常只需要一个SqlSessionFactory实例，用于创建SqlSession对象。在应用程序中，SqlSession的管理一般由Spring框架或者自己手动管理
-        - 线程不安全
-          - SqlSession不是线程安全的，每个SqlSession实例都应该被单独使用，不能被多个线程共享。在多线程环境下，如果多个线程共用一个SqlSession对象，则可能会出现数据混乱的情况，因此需要保证每个线程都有自己的SqlSession实例
-      - Executor
-        - Executor的实现类
-          - SimpleExecutor
-            - SimpleExecutor是最简单的Executor实现，每次执行SQL语句都会创建一个新的Statement对象
-          - ReuseExecutor
-            - ReuseExecutor会尝试重用Statement对象，避免多次创建Statement对象，提高执行效率
-          - BatchExecutor
-            - BatchExecutor则是批量执行SQL语句的Executor实现
-        - Executor的执行流程
-          - 根据传入的MappedStatement对象创建StatementHandler对象。
-          - 判断是否开启了二级缓存，如果开启了，则先从二级缓存中获取执行结果。
-          - 判断是否需要刷新缓存，如果需要，则清空缓存。
-          - 执行SQL语句，并将执行结果保存到缓存中。
-          - 如果开启了二级缓存，则将执行结果保存到二级缓存中。
-        - Executor的线程安全性
-          - Executor是线程安全的，多个线程可以共用同一个Executor实例。在多线程环境下，Executor会使用线程池来管理多个线程的执行，避免线程竞争和线程创建销毁的开销
-      - Configuration
-        - 加载配置文件
-          - 在MyBatis的配置文件中，可以配置数据源、映射文件、插件、类型别名等信息。Configuration通过XMLConfigBuilder类来加载配置文件，并将解析后的配置信息保存到Configuration对象中
-        - 创建SqlSessionFactory
-          - Configuration类也负责创建SqlSessionFactory。它会通过build方法创建SqlSessionFactory对象，并将该对象缓存起来，以便后续使用。在创建SqlSessionFactory对象时，会将Configuration对象作为参数传入，以便SqlSessionFactory可以获取MyBatis的配置信息和映射信息
-        - 管理映射信息
-          - MyBatis中的映射文件通常包含SQL语句和实体类之间的映射关系。Configuration会读取映射文件，将其中的SQL语句解析成MappedStatement对象，并将其保存到mappedStatements集合中。mappedStatements集合中保存了所有映射文件中定义的SQL语句，以及它们对应的MappedStatement对象
-        - 管理缓存
-          - Configuration还负责管理MyBatis的缓存。它会读取配置文件中的缓存配置信息，并创建对应的缓存对象，缓存对象被保存在caches集合中。在执行SQL语句时，如果该语句对应的MappedStatement对象中配置了缓存，则会从caches集合中获取缓存对象，并使用缓存对象来提高查询效率
-    - 占位符$和#
-      - $是字符串替换，拼接到sql中
-      - #可以防止sql注入
-    - 插件机制
-      - 拦截器式设计
-      - 动态代理
-    - 一、二级缓存
-      - 内存缓存
-      - 一级缓存：sqlSession
-      - 二级缓存：Mapper
-    - 三级缓存
-      - 自定义缓存
-      - 插件
-    - 日志
-      - 使用适配器模式，兼容各种日志实现Log4j、Logback、JDK Logging
-    - 设计模式
-      - 构造者模式
-        - SqlSessionFactoryBuilder
-        - XMLConfigBuilder
-      - 模板方法模式
-        - XMLConfigBuilder
-      - 工厂模式
-        - SqlSessionFactory
-      - 装饰器模式
-        - 缓存模块，Excuter执行器
-      - 适配器模式
-        - 日志模块
-      - 代理模式
-        - mapper接口的实现，代理jdbc原生的类实现日志输出，插件
+---
 
-  - Spring系列
-    - spring
-      - IOC
-      - DI
-      - 包含的重点模块
-        - aop
-        - beans
-        - core
-        - orm
-        - web
-        - webmvc
-      - refresh方法
-        - prepareRefresh
-          - 刷新准备
-        - obtainFreshBeanFactory
-          - 获得全新bean工厂
-        - prepareBeanFactory
-          - 对工厂填充属性
-        - postProcessBeanFactory
-          - 子类覆盖方法做额外的处理
-        - invokeBeanFactoryPostProcessors
-          - 执行BeanFactoryPostProcessor以及子接口BeanDefinitionRegistryPostProcessor的方法
-        - registerBeanPostProcessors
-          - 注册bean处理器，只注册，调用是getBean方法
-        - initMessageSource
-          - 初始化message源，不用语言的消息体，国际化处理
-        - initApplicationEventMulticaster
-          - 初始化事件监听多路广播器
-        - onRefresh
-          - 留给子类实现
-        - registerListeners
-          - 在所有注册bean里面找listener bean，注册到广播器中
-        - finishBeanFactoryInitialization
-          - 初始化剩下的单实例（非懒加载）
-        - finishRefresh
-          - 完成刷新过程，通知生命周期处理器lifecycleProcessor，同时发出ContextRefreshEvent通知别人
-        - 如果发生异常：执行destoryBeans销毁之前创建的单例Bean，cancelRefresh重置active标志
-        - finally
-          - 重置公共缓存
-      - Bean的生命周期
-        - 创建
-          - BeanFactoryPostProcesser#postProcessBeanFactory()
-          - InstantiationAwareBeanPostProcessorAdapter#postProcessBeforeInstantiation()
-          - 构造器实例化bean
-          - InstantiationAwareBeanPostProcessAdapter#postProcessAfterInstantiation()
-          - InstantiationAwareBeanPostProcessAdapter#postPropertyValues()
-          - 注入Bean属性
-          - XXXAware的方法
-            - BeanNameAware#setBeanName()
-            - BeanFacoryAware#setBeanFactory()
-          - BeanPostProcessor#postProcessBeforeInitialization()
-          - init-method
-          - @PostConstruct
-          - InitializingBean#afterPropertiesSet()
-          - BeanPostProcessor#postProcessAfterInitialization()
-        - 销毁
-          - DisposabledBean#destory()
-          - destory-method
-          - @PreDestory
-      - AOP
-        - 通知
-          - 前置通知
-          - 后置通知
-          - 环绕通知
-          - 异常通知
-        - 切入点
-        - 切面
-        - 增强
-        - 织入
-        - jdk动态代理
-          - 接口
-          - 字节码生成
-        - cglib代理
-      - 事务
-        - 事务的传播属性7个
-          - require
-            - 支持当前事务，若当前没有事务，则新建一个事务
-          - supports
-            - 支持当前事务，若当前没有事务，则以非事务方式运行
-          - mandatory（强制的）
-            - 支持当前事务，若当前没有事务，则抛出异常 IllegalTransactionStateException
-          - requires_new
-            - 新建事务，若当前存在事务，则将当前事务挂起
-          - not_supported
-            - 以非事务方式运行操作，若当前存在事务，则将当前事务挂起
-          - never
-            - 以非事务方式运行，若当前存在事务，则抛出异常 IllegalTransactionStateException
-          - nested
-            - 若当前存在事务，则在嵌套事务内执行；若没有事务，则行为等同于 PROPAGATION_REQUIRED
-        - 事务的隔离级别
-          - 默认
-          - 读未提交
-          - 读已提交
-          - 可重复读
-          - 串行
-      - 源码问题
-        - 循环依赖
-          - 3级缓存
-    - spring MVC
-      - 九大内置组件
-        - handlerMapping
-        - handlerAdapter
-        - handlerExceptionResolver
-        - viewResolver
-        - requestToViewNameTranslator
-        - localeResolver
-        - themeResolver
-        - MultipartResolver
-        - FlashMapManager
-      - doDispatch方法流程
-        - 请求处理核心环节
-          - 1、请求开始
-          - 2、判断是否是文件上传：是-》MultipartResolver
-          - 3、根据request查找handler（HandlerMapping）
-          - 4、根据handler查找handlerAdapter（HandlerAdapter）
-          - 5、处理last_modified
-          - 6、执行interceptor的preHandler方法
-          - 7、HandlerAdapter处理请求（HandlerAdapter）
-          - 8、是否需要异步：是-》teturn
-          - 9、当view为空时设置默认试图（RequestToViewNameTranslator）
-          - 10、执行interceptor的postHandler方法
-        - 11、是否发生异常：是-》将异常绑定到dispatchException（HandlerExceptionResolver）
-        - 视图处理过程
-          - 12、设置view
-          - 13、页面的渲染处理（localeResolver，themeResolver，viewResolver）
-          - 14、是否发生异常：是-》执行intercept的afterCompletion方法
-          - 15、finally释放资源
-    - spring boot
-      - 自动配置原理
-        - @EnableAutoConfiguration
-        - @Import注解
-          - 原理：注入标识的对象到spring容器
-          - 注解的三种使用方式
-            -  1。实现ImportSelector 接口
-            - 2。实现 ImportBeanDefinitionRegistrar接口
-            - 3。没有实现任何接口
-        - DeferredImportSelector
-          - 作用：延迟注入。目的是降低注入的复杂度。实现条件注解中要求的各种先后循序
-      - SPI机制
-        - META-INF/spring.factories文件
-    - spring，spring boot所有扩展点
-      - BeanFactoryPostProcessor
-        - void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException;
-        - 子接口BeanDefinitionRegistryPostProcessor
-          - void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException;
-      - BeanPostProcessor
-        - 子接口InstantiationAwareBeanPostProcessor
-        - 子接口SmartInstantiationAwareBeanPostProcessor
-        - MergedBeanDefinitionPostProcessor
-      - ApplicationListener
-      - xxxxAware
-      - InitializingBean/DisposableBean
-      - FactoryBean
-      - SmartInitializingSingleton
-      - @PostConstruct
-      - @PreDestory
-      - CommandLineRunner
-      - ApplicationRunner
-      - SpringApplicationRunListener＆ApplicationContextInitializer
-    - SpringSecurity
-    - 配置文件的加载
-      - ConfigFileApplicationListener
-      - 加载顺序：./config、./、classpath：/config、classpath：/
-    - 设计模式
-      - 工厂模式
-      - 单例模式
-      - 观察者模式
-      - 代理模式
-      - 模板方法模式
-      - 适配器模式
+## MyBatis
 
-  - 微服务
-    - 注册中心
-      - Nacos
-        - 客户端
-          - 客户端启动时，创建每5秒一次请求的定时器作为心跳检测
-          - 然后将自己服务的信息通过http协议instanc接口注册到服务端
-          - 客户端再拉取一次完整服务端中的注册列表信息后，然后将此操作放入到一个每10秒一次请求的定时任务中用来更新注册服务列表
-        - 服务端
-          - 服务端接收到客户端的注册请求后，将请求分成修改和删除类型，放入阻塞队列，然后启动一个线程死循环处理这个阻塞队列，这样写与写的线程也不会有并发操作。修改时使用CopyOnWrite方式，通过创建一个一样的注册表的map，然后修改完成后，替换这个map，达到修改不阻塞读的效果。
-          - 服务端也会启动一个每5秒一次的定时器，遍历所有的客户端实例，判断实例的最后心跳时间，如果大于15秒则改为不健康状态，如果大于30秒则剔除该实例。
-      - zookeeper
-        - 角色
-          - leader
-          - follower
-          - observer
-        - 初始化leader选举
-          - 投自己一票，内容（SID：myid，ZXID：事务id）
-          - 先比较比较zxid取大的，再比较sid取大的
-          - 投票超过半数，则通过
-        - 运行期间leader选举
-          - 投自己一票，然后发送给集群其它节点
-          - 接下来跟初始化选举相同
-      - Eurak
-    - 配置中心
-      - nacos
-        - 动态刷新
-          - 1.4版本长轮询
-          - @RefreshScope
-            - 自定义的scope，区别于单例和原型
-          - 监听RefreshEvent
-        - 配置加载顺序
-          - #作用：顺序,从上覆盖到下
-          - #${application.name}-${profile}.${file- extension}   msb-edu-prod.yaml
-          - #${application.name}.${file-extension}   nacos-config.yaml
-          - #${application.name}   nacos-config
-          - #extensionConfigs  扩展配置
-          - #sharedConfigs  共享配置
-        - Distro协议
-          - - Nacos 每个节点是平等的都可以处理写请求，同时把新数据同步到其他节点。
-          - - 在写请求时，每个节点只负责部分数据，其他请求通过DistroFilter转发至责任节点‌，定时发送自己负责数据的校验值到其他节点来保持数据一致性。
-          - - 每个节点直接处理读请求，及时从本地发出响应。
-    - 网关
-      - gateway
-        - WebFlux + Netty + Reactor 响应式的 API 网关
-        - 路由
-        - 断言
-        - 过滤器
-          - pre小的先执行
-          - post小的后执行
-      - zuul
-    - 负载均衡
-      - 客户端负载均衡
-      - 服务端负载均衡
-      - resttemplate
-        - 拦截器ClientHttpRequestInterceptor
-      - 服务器提供：服务注册列表
-      - ribbon
-        - java配置优先于属性配置（建议用属性配置）
-      - loadbalance
-        - 基于webflux
-      - 策略
-        - 轮询
-        - 随机
-        - 响应时间权重
-        - 按分区权重
-    - 容错
-      - 思路
-        - 隔离
-        - 超时
-        - 限流
-        - 熔断
-        - 降级
-      - 流控降级
-        - sentinel
-          - 信号量
-        - hystrix
-          - 信号量/线程池隔离
-      - 限流算法
-        - 固定窗口
-        - 滑动窗口
-        - 令牌桶
-        - 漏桶
-    - RPC
-      - http
-        - feign
-        - openFeign
-      - scoket/netty
-        - dubbo
-        - gRPC
-    - 分布式理论
-      - CAP定理
-        - Consistency（一致性）
-        -  Availability（可用性）
-        - Partition tolerance（分区容错性）
-      - BASE理论
-        - Basically Available（基本可用）
-        - Soft state（软状态）
-          - 指允许系统中的数据存在中间状态，并认为该中间状态的存在不会影响系统的整体可用性，即允许系统在不同节点的数据副本之间进行数据同步的过程存在延时
-        - Eventually consistent（最终一致性）
-    - 分布式事务
-      - 跨库，分库分表，跨进程
-      - 2PC：两阶段提交协议
-        - 两阶段
-          - pre commint（执行事务不提交）
-          - do commit（提交/回滚）
-        - 缺点
-          - 单点故障：协调者出错
-          - 阻塞资源：占用数据库连接
-          - 数据不一致：二阶段出错，数据不一致
-        - XA规范
-          - AP：应用程序
-          - TM：事务管理器（协调者）
-          - RM：资源管理器
-      - 3PC：三阶段提交
-        - can commit（校验准备）
-        - pre commint
-        - do commit
-      - Seata
-        - 支持模式
-          - AT模式:提供无侵入自动补偿的事务模式
-            - 通过解析jdbc，生成并保存事务的回滚语句并根据全局事务id关联，执行事务直接提交释放资源，然后如果事务协调者最后执行提交，就不用处理，如果是回滚，就根据全局事务id找到之前生成的回滚记录，进行回滚操作
-          - XA模式:支持已实现XA接口的数据库的XA模式
-            - 优势
-              - 接入简单，无侵入性
-              - 支持主流数据库
-              - 支持多种语言
-            - 缺点
-              - 有阻塞，性能低
-          - TCC模式:TCC则可以理解为在应用层面的 2PC，是需要我们编写业务逻辑来实现。
-            - TCC 是一种侵入式的分布式事务解决方案，以上三个操作都需要业务系统自行实现，对业务系统有着非常大的入侵性，设计相对复杂，但优点是 TCC 完全不依赖数据库，能够实现跨数据库、跨应用资源管理，对这些不同数据访问通过侵入式的编码方式实现一个原子操作，更好地解决了在各种复杂业务场景下的分布式事务问题
-          - SAGA模式:为长事务提供有效的解决方案
-        - 术语
-          - TC (Transaction Coordinator) - 事务协调者- 独立部署的Server 服务端
-          - TM (Transaction Manager) - 事务管理器-嵌入到应用的Client 客户端
-          - RM (Resource Manager) - 资源管理器-嵌入到应用的Client 客户端
-        - 事务执行流程
-          - 1.TM 请求 TC 开启一个全局事务。TC 会生成一个 XID 作为该全局事务的编号。XID，会在微服务的调用链路中传播，保证将多个微服务的子事务关联在一起。
-          - 2.RM 请求 TC 将本地事务注册为全局事务的分支事务，通过全局事务的 XID 进行关联。
-          - 3.TM 请求 TC 告诉 XID 对应的全局事务是进行提交还是回滚。
-          - 4.TC 驱动 RM 们将 XID 对应的自己的本地事务进行提交还是回滚。
-        - 源码分析
-          - GlobalTransactionScanner
-            - wrapperIfNecessary创建代理类
-            - afterPropertiesSet初始化TM和RM（Netty）
-          - AT模式
-            - 一阶段
-              -  1.解析 SQL：得到 SQL 的类型（UPDATE），表（product），条件（where name = 'TXC'）等相关的信息。
-              - 2. 查询前镜像（改变之前的数据）：根据解析得到的条件信息，生成查询语句，定位数据。
-              - 3. 执行业务 SQL：更新这条数据。
-              - 4. 查询后镜像（改变后的数据）：根据前镜像的结果，通过 **主键** 定位数据。
-              - 5. 插入回滚日志：把前后镜像数据以及业务 SQL 相关的信息组成一条回滚日志记录，插入到 `UNDO_LOG` 表中。
-              - 6. 提交前，向 TC 注册分支：申请 **全局锁** 。
-              - 7. 本地事务提交：业务数据的更新和前面步骤中生成的 UNDO LOG 一并提交。
-              - 8. 将本地事务提交的结果上报给 TC
-            - 二阶段-回滚
-              - 1. 收到 TC 的分支回滚请求，开启一个本地事务，执行如下操作。
-              - 2. 通过 XID 和 Branch ID 查找到相应的 UNDO LOG 记录。
-              - 3. 根据 UNDO LOG 中的前镜像和业务 SQL 的相关信息生成并执行回滚的语句：
-              - 4. 提交本地事务。并把本地事务的执行结果（即分支事务回滚的结果）上报给 TC。
-            - 二阶段-提交
-              - 1. 收到 TC 的分支提交请求，把请求放入一个异步任务的队列中，马上返回提交成功的结果给 TC。
-              - 2. 异步任务阶段的分支提交请求将异步和批量地删除相应 UNDO LOG 记录。
-      - TCC：try-confirm-cancel
-        - try
-        - confirm：直接提交
-        - cancel：回滚操作
-      - 事件表解决方案
-        - 定时器+事件表+消息通知
-      - 最大努力通知方案
-        - 支付回调
-    - 日志收集
-      - elk
-    - 监控
-    - 一致性
-      - Gossip（流行病协议）：redis集群
-      - distro最终一致性协议：Nacos注册中心的AP协议
-      - raft一致性算法：CP协议，redis实现哨兵领导者选举
-        - 新增和修改数据时，主节点的数据只要同步到从节点超过半数，则这次数据的操作算成功
-      - ZAB一致性协议：zookeeper Atomic Broadcast协议
-    - 分布式ID
-      - uuid
-      - 数据库自增id
-      - 数据库多主模式
-      - 号段模式
-      - snowflake雪花算法
-      - 百度UIDGenerator
-        - 双ringBuffer
-        - Snowflake算法
-      - 美团Leaf
-        - leaf-segment号段模式
-        - snowflake雪花算法
-      - 滴滴TinyId
-        - leaf-segment升级而来
-        - 数据库多主节点模式
-        - tinyid-client客户端
-        - 只支持号段一种模式
+### 核心流程
+- **说明**：加载配置 → 解析 Mapper XML → SqlSessionFactory 创建 SqlSession → Executor 执行 SQL → 结果映射
+- **面试要点**：MyBatis 是对 JDBC 的封装，非 ORM（不管理对象生命周期）
 
-  - 23种设计模式
-    - 创建型
-      - 工厂
-        - 工厂方法
-          - BeanFactory
-          - SqlSessionFactory
-          - TreadFactory
-        - 抽象工厂
-      - 单例
-      - 构造者
-      - 原型
-    - 结构型
-      - 代理
-      - 桥接
-      - 装饰器
-      - 适配器
-      - 不常用
-        - 门面
-        - 组合
-        - 享元
-    - 行为型
-      - 观察者
-      - 模板方法
-      - 策略
-      - 迭代器
-      - 状态
-      - 不常用
-        - 访问者
-        - 备忘录
-        - 命令
-        - 解释器
-        - 中介
+### SqlSessionFactory vs SqlSession
+- **SqlSessionFactory**：工厂，线程安全，应用级单例
+- **SqlSession**：会话，线程不安全，请求级；封装 CRUD 和事务
+- **面试要点**：Spring 集成后 SqlSession 由 SqlSessionTemplate 管理，线程安全
 
-  - 架构设计
+### Executor 三种实现
+- **SimpleExecutor**：每次新建 Statement
+- **ReuseExecutor**：复用 Statement（同 SQL）
+- **BatchExecutor**：批量提交，flushStatements() 执行
+- **面试要点**：BatchExecutor 适合批量 insert/update
 
-  - 技术才是王道，沉浸下来学习技术
+### #{} vs ${}
+- **#{}**：预编译占位符，防 SQL 注入（PreparedStatement）
+- **${}**：字符串拼接，用于动态表名/列名/ORDER BY
+- **面试要点**：能用 #{} 不用 ${}；${} 需白名单校验
+
+### 缓存
+- **一级缓存**：SqlSession 级别，默认开启；同一 Session 相同查询走缓存
+- **二级缓存**：Mapper 命名空间级别，需 `<cache/>` 开启；跨 Session 共享
+- **面试要点**：
+  - 一级缓存：update/insert/delete/commit 后清空
+  - 二级缓存：序列化存储，注意脏读；分布式环境用 Redis 替代
+
+### 插件机制
+- **说明**：Interceptor 接口，基于 JDK 动态代理，可拦截 Executor/StatementHandler/ParameterHandler/ResultSetHandler
+- **面试要点**：分页插件 PageHelper 就是 Interceptor 实现
+
+### 设计模式
+- **建造者**：SqlSessionFactoryBuilder、XMLConfigBuilder
+- **工厂**：SqlSessionFactory
+- **代理**：Mapper 接口 JDK 动态代理
+- **装饰器**：CachingExecutor 包装 BaseExecutor
+- **适配器**：日志模块适配 Log4j/Logback
+- **模板方法**：BaseExecutor 定义流程，子类实现 doUpdate/doQuery
+- **面试要点**：Mapper 接口无实现类，运行时动态代理生成
+
+---
+
+## Spring 系列
+
+### IOC & DI
+- **IOC**：控制反转，对象创建交给容器
+- **DI**：依赖注入，容器注入依赖（构造器/@Autowired/setter）
+- **面试要点**：IOC 是思想，DI 是实现方式；好处：解耦、便于测试
+
+### refresh 方法（容器启动 12 步）
+1. prepareRefresh → 2. obtainFreshBeanFactory → 3. prepareBeanFactory → 4. postProcessBeanFactory → 5. invokeBeanFactoryPostProcessors → 6. registerBeanPostProcessors → 7. initMessageSource → 8. initApplicationEventMulticaster → 9. onRefresh → 10. registerListeners → 11. finishBeanFactoryInitialization（实例化单例 Bean）→ 12. finishRefresh
+- **面试要点**：BeanFactoryPostProcessor 在 Bean 实例化**前**修改 BeanDefinition；BeanPostProcessor 在 Bean 实例化**后**加工
+
+### Bean 生命周期
+- 实例化 → 属性填充 → Aware 回调 → BeanPostProcessor.before → @PostConstruct / InitializingBean → init-method → BeanPostProcessor.after → 使用 → @PreDestroy / DisposableBean → destroy-method
+- **面试要点**：
+  - 循环依赖：单例 + 属性注入可通过三级缓存解决；构造器注入无法解决
+  - 三级缓存：singletonObjects → earlySingletonObjects → singletonFactories（ObjectFactory）
+
+### AOP
+- **核心概念**：切面(Aspect)、切点(Pointcut)、通知(Advice)、连接点(JoinPoint)、织入(Weaving)
+- **通知类型**：@Before、@After、@Around、@AfterReturning、@AfterThrowing
+- **实现**：JDK 动态代理（有接口）/ CGLIB（无接口，继承目标类）
+- **面试要点**：
+  - @Transactional 基于 AOP，同类内部调用不生效（未走代理）
+  - CGLIB 不能代理 final 方法和类
+
+### 事务传播 7 种
+| 传播 | 行为 |
+|------|------|
+| REQUIRED（默认） | 有则加入，无则新建 |
+| SUPPORTS | 有则加入，无则非事务 |
+| MANDATORY | 有则加入，无则抛异常 |
+| REQUIRES_NEW | 总是新建，挂起当前 |
+| NOT_SUPPORTED | 非事务，挂起当前 |
+| NEVER | 非事务，有则抛异常 |
+| NESTED | 嵌套事务（Savepoint） |
+
+- **面试要点**：REQUIRES_NEW 适合日志记录（不受外层回滚影响）；NESTED 外层回滚内层也回滚，内层回滚不影响外层
+
+### Spring MVC
+- **九大组件**：HandlerMapping、HandlerAdapter、HandlerExceptionResolver、ViewResolver 等
+- **doDispatch 流程**：请求 → 找 Handler → 找 Adapter → 拦截器 pre → 执行 Handler → 拦截器 post → 渲染视图 → afterCompletion
+- **面试要点**：DispatcherServlet 是前端控制器；@Controller + @RequestMapping
+
+### Spring Boot 自动配置
+- **@EnableAutoConfiguration** → @Import(AutoConfigurationImportSelector) → 读取 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports（2.7+）或 spring.factories
+- **@Conditional**：@ConditionalOnClass/MissingBean/Property 等条件装配
+- **DeferredImportSelector**：延迟加载，等用户配置处理完再导入
+- **面试要点**：starter = 依赖 + 自动配置类；自定义 starter 写 Configuration + spring.factories
+
+### Spring 扩展点（常考）
+- **BeanFactoryPostProcessor**：修改 BeanDefinition（最早）
+- **BeanPostProcessor**：Bean 初始化前后加工
+- **ApplicationListener**：事件监听
+- **Aware 系列**：BeanNameAware、BeanFactoryAware、ApplicationContextAware
+- **InitializingBean / DisposableBean**：init/destroy 回调
+- **FactoryBean**：生产复杂 Bean（如 MyBatis SqlSessionFactoryBean）
+- **ApplicationRunner / CommandLineRunner**：启动后执行
+- **面试要点**：MyBatis 集成靠 FactoryBean + MapperScannerConfigurer(BDRPP)
+
+### 配置加载顺序
+`./config/` → `./` → `classpath:/config/` → `classpath:/`（后加载的覆盖先加载的）
+
+---
+
+## 微服务
+
+### 注册中心
+- **Nacos**：AP（Distro 协议，最终一致）+ CP（Raft，临时实例）；客户端 5s 心跳，服务端 15s 不健康 / 30s 剔除
+- **Zookeeper**：CP；Leader 选举（ZXID 大优先，SID 大优先）；Watcher 推送变更
+- **面试要点**：Nacos 支持 AP+CP 切换；ZK 节点多时 Watcher 性能差
+
+### 配置中心（Nacos）
+- **动态刷新**：长轮询（1.4）/ gRPC 推送 + @RefreshScope（销毁重建 Bean）
+- **加载优先级**：profile 配置 > 默认配置 > extensionConfigs > sharedConfigs
+- **Distro 协议**：写请求路由到责任节点，读本地响应，异步同步
+- **面试要点**：@RefreshScope Bean 刷新时会销毁重建，注意状态丢失
+
+### 网关
+- **Gateway**：WebFlux + Netty，Route（路由）+ Predicate（断言）+ Filter（过滤器）
+- **Filter 顺序**：pre 越小越先执行，post 越小越后执行
+- **面试要点**：Gateway 异步非阻塞；Zuul 1.x 同步阻塞（已停更）
+
+### 负载均衡
+- **客户端**：Ribbon / Spring Cloud LoadBalancer（替代 Ribbon）
+- **服务端**：Nginx / SLB
+- **策略**：轮询、随机、加权响应时间、一致性 Hash
+- **面试要点**：@LoadBalanced RestTemplate / OpenFeign 内置负载均衡
+
+### 容错（Sentinel / Hystrix）
+- **手段**：隔离、超时、限流、熔断、降级
+- **限流算法**：固定窗口、滑动窗口、令牌桶、漏桶
+- **Sentinel**：信号量/线程数限流，规则动态推送
+- **Hystrix**：线程池/信号量隔离（已停更）
+- **面试要点**：令牌桶允许突发流量；漏桶平滑输出
+
+### CAP & BASE
+- **CAP**：分区容错 P 必选，C 和 A 只能二选一
+- **BASE**：基本可用、软状态、最终一致
+- **面试要点**：CP 系统（ZK、Etcd）；AP 系统（Nacos AP、Eureka）；实际都是 PA + 弱 C 或弱 A
+
+### 分布式事务
+- **2PC**：Prepare → Commit/Rollback；缺点：阻塞、单点、数据不一致
+- **3PC**：CanCommit → PreCommit → DoCommit；增加超时减少阻塞
+- **Seata AT 模式**：一阶段业务 SQL + undo log 提交；二阶段异步删 undo log 或回滚
+- **TCC**：Try（预留）→ Confirm（确认）→ Cancel（取消）；侵入式
+- **Saga**：长事务拆多个本地事务 + 补偿
+- **最大努力通知**：支付回调，多次重试
+- **面试要点**：AT 无侵入靠 undo log；TCC 性能高但代码侵入大
+
+### 分布式 ID
+- **UUID**：无序，不适合索引
+- **数据库自增**：简单，单点瓶颈
+- **号段模式**：批量取 ID（Leaf-segment、TinyId）
+- **雪花算法**：1bit符号 + 41bit时间 + 10bit机器 + 12bit序列号；趋势递增
+- **面试要点**：雪花时钟回拨问题 → 等待/借用未来 ID；美团 Leaf 双 Buffer 号段
+
+### 一致性协议
+- **Raft**：选主 + 日志复制，过半确认（Redis Sentinel、Etcd）
+- **ZAB**：ZK 原子广播，崩溃恢复 + 消息广播
+- **Gossip**：Redis Cluster 节点间交换状态
+- **Distro**：Nacos AP 模式，责任节点 + 异步校验
+
+---
+
+## 23 种设计模式
+
+### 创建型
+| 模式 | 说明 | 面试例子 |
+|------|------|----------|
+| 工厂方法 | 定义创建接口，子类决定实例化哪个类 | Calendar.getInstance() |
+| 抽象工厂 | 创建一系列相关对象 | Spring BeanFactory |
+| 单例 | 全局唯一实例 | Runtime、Spring Bean 默认单例 |
+| 建造者 | 分步构建复杂对象 | StringBuilder、Lombok @Builder |
+| 原型 | clone 复制对象 | Object.clone() |
+
+- **面试要点**：单例写法（饿汉/懒汉/双重检查/枚举/静态内部类）；枚举单例防反射和序列化破坏
+
+### 结构型
+| 模式 | 说明 | 面试例子 |
+|------|------|----------|
+| 代理 | 控制对象访问 | Spring AOP、MyBatis Mapper |
+| 装饰器 | 动态添加职责 | IO 流 BufferedXxx、Spring Cache |
+| 适配器 | 接口转换 | Spring MVC HandlerAdapter |
+| 桥接 | 抽象与实现分离 | JDBC Driver |
+| 门面 | 统一入口 | SLF4J |
+| 组合 | 树形结构统一处理 | Java File 系统 |
+| 享元 | 共享细粒度对象 | Integer 缓存、String 常量池 |
+
+### 行为型
+| 模式 | 说明 | 面试例子 |
+|------|------|----------|
+| 观察者 | 一对多通知 | Spring Event、MQ |
+| 模板方法 | 骨架固定，步骤可变 | JdbcTemplate、HttpServlet |
+| 策略 | 算法可替换 | Comparator、ThreadPoolExecutor 拒绝策略 |
+| 迭代器 | 顺序访问集合 | Iterator |
+| 状态 | 行为随状态变化 | Thread 状态 |
+| 责任链 | 请求沿链传递 | Filter、Interceptor、Netty Pipeline |
+| 命令 | 请求封装为对象 | Runnable |
+| 中介者 | 对象间解耦通信 | MQ |
+| 备忘录 | 保存/恢复状态 | Git |
+| 访问者 | 数据结构与操作分离 | 编译器 AST |
+| 解释器 | 语法解析 | SpEL、正则 |
+
+- **面试要点**：Spring 中常用：工厂、单例、代理、模板方法、观察者、装饰器、适配器
+
+---
+
+## 架构设计
+
+> 待补充：高并发架构、DDD、领域划分、系统拆分原则等
+
+---
+
+> **复习建议**：每个模块先扫 **面试要点**，再回看 **说明** 加深理解。高频串联题：HashMap 原理 → ConcurrentHashMap → 线程池 → JMM → MySQL 索引/MVCC → Redis 缓存三兄弟 → Spring 循环依赖/AOP/事务 → 分布式 CAP/事务。
