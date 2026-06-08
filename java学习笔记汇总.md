@@ -196,10 +196,48 @@
 - **互斥/共享**：互斥锁独占，共享锁多读（ReadWriteLock 读锁共享、写锁互斥）
 
 ### CAS 与 Java 锁底层实现
-- **说明**：synchronized 锁升级（偏向→轻量→重量）；AQS 抽象队列同步器是 ReentrantLock/CountDownLatch 基础
+- **说明**：synchronized 锁升级（偏向→轻量→重量）；AQS 是 JUC 锁和同步工具的统一底层框架
 - **面试要点**：
   - 轻量级锁：CAS 自旋，适合锁竞争少
-  - AQS：state + CLH 双向队列，模板方法模式
+  - AQS 详见下方专题；ReentrantLock、Semaphore、CountDownLatch 等均基于 AQS
+
+### AQS（AbstractQueuedSynchronizer）
+- **说明**：`java.util.concurrent.locks` 包中的抽象队列同步器，JUC 并发工具的核心骨架。通过 **volatile state** 表示同步状态，**CLH 双向队列** 管理阻塞线程，子类只需实现少量模板方法即可定制锁语义
+- **核心结构**：
+  - **state**：`volatile int`，0 表示未占用；ReentrantLock 中 state=重入次数，Semaphore 中 state=许可数，CountDownLatch 中 state=剩余计数
+  - **CLH 队列**：FIFO 双向链表，每个 Node 封装一个等待线程；竞争失败则入队并 `park` 挂起，前驱节点释放锁时 `unpark` 唤醒后继
+  - **Node**：含 thread、waitStatus（SIGNAL/CANCELLED/CONDITION/PROPAGATE）、prev/next
+- **两种模式**：
+  - **独占模式（Exclusive）**：同一时刻只有一个线程能获取 → ReentrantLock、ReentrantReadWriteLock 写锁
+  - **共享模式（Shared）**：多个线程可同时获取 → Semaphore、CountDownLatch、ReentrantReadWriteLock 读锁
+- **模板方法（子类实现）**：
+  - 独占：`tryAcquire` / `tryRelease` / `isHeldExclusively`
+  - 共享：`tryAcquireShared` / `tryReleaseShared`
+  - AQS 已实现：`acquire`、`release`、`acquireShared`、`releaseShared`（含入队、自旋、挂起/唤醒全流程）
+- **acquire 流程（独占）**：
+  1. 调用 `tryAcquire` 尝试 CAS 修改 state，成功则直接返回
+  2. 失败则封装 Node 入 CLH 队列尾部
+  3. 自旋检查前驱是否为 head 且再次 `tryAcquire`
+  4. 仍失败则 `LockSupport.park()` 挂起，等待前驱 `unpark` 唤醒
+- **Condition 条件队列**：
+  - AQS 内部类 `ConditionObject`，每个 Condition 维护独立等待队列
+  - `await()`：释放锁 → 加入 Condition 队列 → 挂起；`signal()`：转移节点到 AQS 队列 → 等待获取锁
+  - **面试要点**：Condition 实现「等待-通知」，替代 synchronized 的 wait/notify，且支持多个条件变量
+- **基于 AQS 的 JUC 组件**：
+  | 组件 | 模式 | state 含义 |
+  |------|------|-----------|
+  | ReentrantLock | 独占 | 0=未锁，>0=重入次数 |
+  | ReentrantReadWriteLock | 读共享/写独占 | 高 16 位=读锁计数，低 16 位=写锁计数 |
+  | Semaphore | 共享 | 剩余许可数 |
+  | CountDownLatch | 共享 | 剩余倒计时 |
+  | ReentrantLock 公平 vs 非公平 | — | 公平锁按队列顺序 acquire；非公平锁新线程可直接 CAS 抢锁（默认，吞吐更高） |
+- **面试要点**：
+  - AQS = **state + CLH 队列 + 模板方法模式**，是 JUC 的「基础设施」
+  - 为什么用 CLH 队列：竞争线程入队后本地自旋检查前驱，减少全局同步开销
+  - ReentrantLock 与 synchronized 区别：可中断、可超时 tryLock、公平/非公平可选、多 Condition
+  - CountDownLatch 原理：`tryAcquireShared` 返回剩余 count，count=0 时所有等待线程通过；**不可重置**
+  - Semaphore 原理：共享模式，`tryAcquireShared` 扣减许可，许可不足则入队阻塞
+  - 手写追问：如何实现一个简单互斥锁？→ 继承 AQS，tryAcquire 中 CAS state 0→1，tryRelease 中 state 置 0 并 unpark 后继
 
 ### ConcurrentHashMap 为何 key/value 不能为 null
 - **说明**：`get(key)` 返回 null 时，无法区分 key 不存在还是 value 为 null，ConcurrentHashMap 不允许这种二义性
@@ -887,4 +925,4 @@
 
 ---
 
-> **复习建议**：每个模块先扫 **面试要点**，再回看 **说明** 加深理解。高频串联题：HashMap 原理 → ConcurrentHashMap → 线程池 → JMM → MySQL 索引/MVCC → Redis 缓存三兄弟 → Spring 循环依赖/AOP/事务 → 分布式 CAP/事务。
+> **复习建议**：每个模块先扫 **面试要点**，再回看 **说明** 加深理解。高频串联题：HashMap 原理 → ConcurrentHashMap → 线程池 → JMM/CAS → **AQS** → ReentrantLock → MySQL 索引/MVCC → Redis 缓存三兄弟 → Spring 循环依赖/AOP/事务 → 分布式 CAP/事务。
