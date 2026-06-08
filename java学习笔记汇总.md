@@ -1,6 +1,6 @@
 # Java 学习笔记汇总
 
-> 格式说明：每个知识点含 **说明**（快速理解）和 **面试要点**（高频考点，便于背诵）
+> 格式说明：每个知识点含 **说明**（快速理解）和 **面试要点**（高频考点，便于背诵）。带 **📖 专题详解** 链接的条目保留汇总速记；关键知识点附 **示意图** 辅助记忆。
 
 ---
 
@@ -8,6 +8,20 @@
 
 ### JDK、JRE、JVM
 - **说明**：JDK = 开发工具包（含 JRE + 编译器 javac 等）；JRE = 运行环境（JVM + 核心类库）；JVM = 虚拟机，负责字节码执行、内存管理、GC
+
+```
+┌─────────────── JDK（Java Development Kit）───────────────┐
+│  开发工具: javac · javadoc · jar · jdb ...              │
+│  ┌──────────── JRE（Java Runtime Environment）────────┐ │
+│  │  ┌─────────────┐  ┌──────────────────────────────┐  │ │
+│  │  │     JVM     │  │  核心类库（java.lang 等）     │  │ │
+│  │  │ 字节码/GC   │  │  rt.jar / modules（JDK9+）  │  │ │
+│  │  └─────────────┘  └──────────────────────────────┘  │ │
+│  └─────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+  JDK ⊃ JRE ⊃ JVM     JRE = JVM + 类库     JDK = JRE + 开发工具
+```
+
 - **面试要点**：
   - 三者包含关系：JDK ⊃ JRE ⊃ JVM
   - 跨平台靠 JVM：一次编译，到处运行（字节码 + 不同 OS 的 JVM 实现）
@@ -63,6 +77,19 @@
 
 ### HashMap & ConcurrentHashMap
 - **说明**：HashMap 数组+链表+红黑树（链表长度≥8 且数组≥64 转红黑树）；ConcurrentHashMap JDK7 分段锁，JDK8 CAS+synchronized 锁桶头节点
+
+```
+数组(桶)          链表              红黑树(≥8且≥64)
+┌───┐           ┌──→ [k1,v1]→[k2,v2]
+│ 0 │→ null
+├───┤           ┌──→ [k3,v3]→ 🌳BST
+│ 1 │→ ●────────┘
+├───┤
+│ 2 │→ ●──→ [k4,v4]
+└───┘
+put: hash → 桶下标 → 无冲突直插 / 冲突拉链表或树 → 超0.75扩容×2
+```
+
 - **面试要点**：
   - **put 流程**：算 hash → 定位桶 → 无冲突直接放 → 有冲突拉链表/树 → 超阈值扩容 2 倍
   - 初始容量 16，负载因子 0.75，容量始终 2 的幂（便于位运算取模）
@@ -72,6 +99,14 @@
 
 ### 4 种引用类型
 - **说明**：强引用（默认，GC 不回收）、软引用（内存不足才回收，适合缓存）、弱引用（下次 GC 必回收，ThreadLocal key）、虚引用（跟踪 GC，PhantomReference）
+
+```
+强引用 ──→ 对象     GC: 永不回收(有强引用时)
+软引用 ──→ 对象     GC: 内存不足才回收  → 缓存
+弱引用 ──→ 对象     GC: 下次必回收      → ThreadLocal key
+虚引用 ──→ 对象     GC: 跟踪回收时机    → 需 ReferenceQueue
+```
+
 - **面试要点**：
   - 软引用 → SoftReference，适合做图片/网页缓存
   - 弱引用 → WeakReference，ThreadLocal 内存泄漏根源
@@ -96,12 +131,36 @@
 
 ### 线程的生命周期
 - **说明**：NEW → RUNNABLE → BLOCKED（等锁）/ WAITING（wait/join）/ TIMED_WAITING（sleep）→ TERMINATED
+
+```mermaid
+stateDiagram-v2
+  [*] --> NEW: new Thread()
+  NEW --> RUNNABLE: start()
+  RUNNABLE --> BLOCKED: 等 synchronized 锁
+  BLOCKED --> RUNNABLE: 获得锁
+  RUNNABLE --> WAITING: wait()/join()
+  WAITING --> RUNNABLE: notify()/线程结束
+  RUNNABLE --> TIMED_WAITING: sleep()/wait(n)
+  TIMED_WAITING --> RUNNABLE: 超时/唤醒
+  RUNNABLE --> TERMINATED: run 结束
+```
+
 - **面试要点**：
   - RUNNABLE 包含 Running 和 Ready（就绪）
   - BLOCKED 等 synchronized 锁；WAITING 等 notify
 
 ### Synchronized 和 ReentrantLock
 - **说明**：synchronized JVM 层面，自动加解锁，不可中断；ReentrantLock JDK API，可中断、可公平、可多个 Condition
+
+```mermaid
+flowchart LR
+  A[无锁] -->|首次访问| B[偏向锁]
+  B -->|其他线程竞争| C[轻量级锁 CAS自旋]
+  C -->|自旋失败| D[重量级锁 阻塞队列]
+  D -->|竞争减少| C
+  C --> B
+```
+
 - **面试要点**：
   - synchronized 锁升级：无锁 → 偏向锁 → 轻量级锁 → 重量级锁
   - ReentrantLock 需手动 lock/unlock，必须在 finally 中 unlock
@@ -136,6 +195,18 @@
 
 ### 线程池工作原理
 - **说明**：提交任务 → 核心未满则创建核心线程 → 已满则入队 → 队列满则创建非核心线程 → 达最大则拒绝
+
+```mermaid
+flowchart TD
+  T[提交任务] --> C{核心线程满?}
+  C -->|否| N[创建核心线程执行]
+  C -->|是| Q{队列满?}
+  Q -->|否| E[入队等待]
+  Q -->|是| M{达最大线程数?}
+  M -->|否| X[创建非核心线程]
+  M -->|是| R[拒绝策略]
+```
+
 - **面试要点**：能口述完整流程；核心线程默认不回收（allowCoreThreadTimeOut 可改）
 
 ### 线程池拒绝策略
@@ -147,6 +218,16 @@
 
 ### ThreadLocal
 - **说明**：每个线程独立副本，底层 ThreadLocalMap 以 ThreadLocal 为 key（弱引用），value 存在 Entry 中
+
+```
+Thread                           ThreadLocalMap (在 Thread 内)
+┌──────────────┐                ┌─────────────────────────┐
+│ threadLocals │──指向────────→│ Entry[弱引用key → value] │
+└──────────────┘                │ Entry[弱引用key → value] │
+                                └─────────────────────────┘
+⚠ key 被 GC 后 value 仍被 Thread 强引用 → 必须 remove()
+```
+
 - **面试要点**：
   - 内存泄漏：key 被 GC 但 value 仍被 Thread 强引用 → 用完必须 `remove()`
   - 原理：Thread 持有 ThreadLocalMap，get/set 操作当前线程的 Map
@@ -184,6 +265,20 @@
 
 ### JMM（Java 内存模型）
 - **说明**：定义主内存与工作内存交互规则，屏蔽硬件差异，保证并发语义
+
+```
+        主内存 (堆/共享变量)
+       ┌─────────────────┐
+       │    sharedVar    │
+       └────────┬────────┘
+    read/write  │  read/write
+   ┌────────────┼────────────┐
+   ▼            ▼            ▼
+工作内存T1   工作内存T2   工作内存T3
+(线程私有副本)  (CPU缓存)    ...
+volatile/CAS/锁 → 保证主内存与工作内存同步
+```
+
 - **面试要点**：
   - **volatile**：保证可见性 + 禁止指令重排，不保证原子性（i++ 不安全）
   - **CAS**：Compare And Swap，CPU 原子指令，ABA 问题用版本号解决（AtomicStampedReference）
@@ -203,6 +298,20 @@
 
 ### AQS（AbstractQueuedSynchronizer）
 - **说明**：`java.util.concurrent.locks` 包中的抽象队列同步器，JUC 并发工具的核心骨架。通过 **volatile state** 表示同步状态，**CLH 双向队列** 管理阻塞线程，子类只需实现少量模板方法即可定制锁语义
+
+```mermaid
+flowchart LR
+  subgraph AQS
+    S[state 同步状态]
+    Q[CLH 双向队列]
+  end
+  T1[线程1] -->|tryAcquire CAS| S
+  T2[线程2] -->|失败入队 park| Q
+  T3[线程3] -->|失败入队 park| Q
+  S -->|release unpark| Q
+  Q -->|唤醒后继| T2
+```
+
 - **核心结构**：
   - **state**：`volatile int`，0 表示未占用；ReentrantLock 中 state=重入次数，Semaphore 中 state=许可数，CountDownLatch 中 state=剩余计数
   - **CLH 队列**：FIFO 双向链表，每个 Node 封装一个等待线程；竞争失败则入队并 `park` 挂起，前驱节点释放锁时 `unpark` 唤醒后继
@@ -280,6 +389,22 @@
 - **CountDownLatch**：一次性倒计时，await 等 count 归零（主线程等多线程完成）
 - **CyclicBarrier**：可重用屏障，多线程互相等待到齐（分批计算）
 - **Semaphore**：信号量，控制并发数（连接池、限流）
+
+```mermaid
+flowchart TB
+  subgraph CDL["CountDownLatch (不可重置)"]
+    M[主线程 await] --> W{count=0?}
+    T1[子线程 countDown] --> W
+    T2[子线程 countDown] --> W
+  end
+  subgraph CB["CyclicBarrier (可 reset)"]
+    A1[线程1 await] --- B[屏障]
+    A2[线程2 await] --- B
+    A3[线程3 await] --- B
+    B -->|全部到齐| GO[一起继续]
+  end
+```
+
 - **面试要点**：
   - CountDownLatch 不可重置，CyclicBarrier 可 reset
   - Semaphore 三个线程轮流打印：acquire(1) + release(1) 控制顺序
@@ -294,6 +419,17 @@
 
 ### 同步/异步 vs 阻塞/非阻塞
 - **说明**：同步/异步看**调用方是否等待结果**；阻塞/非阻塞看**线程是否挂起等待**
+
+```
+              │  阻塞(线程挂起)    │  非阻塞(线程不挂起)
+──────────────┼──────────────────┼──────────────────
+  同步(自己等  │  BIO             │  NIO+Selector
+   数据拷贝)  │  read 阻塞等数据  │  轮询/select 就绪后 read
+──────────────┼──────────────────┼──────────────────
+  异步(回调   │  较少见           │  AIO
+   通知结果)  │                  │  提交后立即返回,回调通知
+```
+
 - **面试要点**：
   - BIO：同步阻塞（一个连接一个线程）
   - NIO：同步非阻塞（Selector 多路复用，一个线程管多连接）
@@ -301,13 +437,14 @@
   - 四者正交：同步阻塞、同步非阻塞、异步阻塞、异步非阻塞
 
 ### BIO / NIO / AIO
+- 📖 **专题详解** → [Java-IO模型-NIO与AIO详解](./Java-IO模型-NIO与AIO详解.md)
 | 模型 | 特点 | 场景 |
 |------|------|------|
 | BIO | 一连接一线程，阻塞 IO | 连接数少 |
 | NIO | Buffer+Channel+Selector，多路复用 | 高并发（Netty） |
 | AIO | 异步回调 | 大文件、连接数多（实际少用） |
 
-- **面试要点**：NIO 核心：Channel 双向、Buffer 缓冲区、Selector 监听多个 Channel 事件
+- **面试要点**：NIO 核心：Channel 双向、Buffer 缓冲区、Selector 监听多个 Channel 事件；NIO 数据就绪后应用线程自己 read；AIO 由回调通知；Linux 下 Java AIO 用 epoll 模拟，Netty 仍选 NIO
 
 ### 设计模式（IO 相关）
 - **装饰者**：BufferedInputStream 包装 FileInputStream 加缓冲
@@ -329,6 +466,26 @@
 
 ### TCP
 - **说明**：面向连接、可靠、有序、流量控制（滑动窗口）、拥塞控制
+
+**三次握手（建立连接）**
+```
+客户端                    服务端
+  │─── SYN seq=x ────────→│
+  │←── SYN+ACK seq=y ─────│
+  │─── ACK seq=x+1 ──────→│
+  │      连接建立          │
+```
+
+**四次挥手（关闭连接）**
+```
+客户端                    服务端
+  │─── FIN ──────────────→│
+  │←── ACK ───────────────│
+  │←── FIN ───────────────│  (等服务发完)
+  │─── ACK ──────────────→│
+  │    TIME_WAIT 2MSL     │
+```
+
 - **面试要点**：
   - **三次握手**：SYN → SYN+ACK → ACK（确认双方收发能力）
   - **四次挥手**：FIN → ACK → FIN → ACK（全双工需分别关闭）
@@ -345,6 +502,7 @@
 - **面试要点**：浏览器缓存 → 系统 hosts → 本地 DNS → 递归查询
 
 ### Java NIO 实现
+- 📖 **专题详解** → [Java-IO模型-NIO与AIO详解](./Java-IO模型-NIO与AIO详解.md)
 - **Buffer**：堆内存/直接内存，flip() 切换读写模式，clear() 重置
 - **Channel**：双向，FileChannel、SocketChannel；FileChannel.transferTo() 零拷贝
 - **Selector**：多路复用，select/poll/epoll；监听 OP_ACCEPT/READ/WRITE/CONNECT
@@ -355,6 +513,15 @@
   - 零拷贝：CompositeByteBuf 组合、DirectBuffer、transferTo/sendfile
   - 内存池化：PooledByteBufAllocator 复用 ByteBuf
   - Reactor 模型：Boss 处理 Accept，Worker 处理 Read/Write
+
+```mermaid
+flowchart LR
+  Client --> Boss[Boss EventLoop\nAccept]
+  Boss --> Worker1[Worker\nRead/Write]
+  Boss --> Worker2[Worker\nRead/Write]
+  Worker1 --> Pipeline[ChannelPipeline\n入站/出站 Handler链]
+```
+
   - 锁优化：细粒度锁、LongAdder、ThreadLocal、CountDownLatch 替代 wait/notify
 - **潜在问题**：
   - 空轮询 Bug：JDK epoll 空轮询导致 CPU 100% → Netty 限次后 rebuild Selector
@@ -384,6 +551,18 @@
 
 ### 双亲委派机制
 - **说明**：类加载：Bootstrap → Extension → Application → 自定义；子加载器先委派父加载器，父无法加载才自己加载
+
+```mermaid
+flowchart BT
+  C[自定义 ClassLoader] -->|委派| A[Application ClassLoader]
+  A -->|委派| E[Extension ClassLoader]
+  E -->|委派| B[Bootstrap ClassLoader\nC++实现,加载rt.jar]
+  B -->|无法加载| E
+  E -->|无法加载| A
+  A -->|无法加载| C
+  C -->|自己加载| OK[defineClass]
+```
+
 - **面试要点**：
   - 作用：保证核心类不被篡改（如自定义 java.lang.String 无效）
   - 破坏场景：Tomcat 隔离 Web 应用、SPI（线程上下文类加载器）、OSGi
@@ -393,6 +572,17 @@
 - **说明**：
   - 线程共享：堆（对象实例）、方法区/元空间（类信息、常量、静态变量）
   - 线程私有：虚拟机栈（方法帧、局部变量）、本地方法栈、程序计数器
+
+```
+┌────────────── 线程共享 ──────────────────┐
+│  堆 Heap (对象)   │  方法区/元空间 (类信息)  │
+├────────────── 线程私有 ──────────────────┤
+│ 虚拟机栈 │ 本地方法栈 │ 程序计数器(PC)      │
+│ (每个线程各一份)                          │
+└─────────────────────────────────────────┘
+JDK8: 永久代 → 元空间(本地内存,默认无上限)
+```
+
 - **面试要点**：
   - JDK8 方法区用元空间（本地内存），替代永久代
   - 栈溢出 StackOverflowError（递归过深）；堆溢出 OutOfMemoryError
@@ -423,6 +613,16 @@
 
 ### 分代收集理论
 - **说明**：弱分代假说：大多数对象朝生夕灭；强分代假说：熬过多次 GC 的对象难消亡
+
+```
+新生代 (Minor GC 频繁, 复制算法)          老年代 (Major/Full GC)
+┌────────┬──────┬──────┐                ┌──────────────┐
+│  Eden  │  S0  │  S1  │  年龄≥阈值 ──→ │   Old Gen    │
+│  8     │  1   │  1   │                │ 标记清除/整理  │
+└────────┴──────┴──────┘                └──────────────┘
+  新对象    Survivor 互换复制存活对象
+```
+
 - **新生代**：Eden + 2 Survivor，复制算法，Minor GC 频繁
 - **老年代**：标记-清除/整理，Major/Full GC 慢
 - **面试要点**：对象优先 Eden 分配 → Minor GC 存活进 Survivor → 年龄达阈值进老年代
@@ -474,6 +674,15 @@
 - **C 一致性**：业务+数据库约束共同保证
 - **I 隔离性**：MVCC + 锁
 - **D 持久性**：redo log
+
+```mermaid
+flowchart LR
+  A[原子性 A] -->|undo log| R[回滚]
+  I[隔离性 I] -->|MVCC+锁| V[多版本/锁]
+  D[持久性 D] -->|redo log| P[崩溃恢复]
+  A & I & D --> C[一致性 C\n最终目标]
+```
+
 - **面试要点**：ACID 靠 undo/redo/MVCC/锁 实现，一致性是最终目标
 
 ### InnoDB 存储结构
@@ -495,6 +704,16 @@
 - **二级索引**：叶子存主键值，查非索引列需**回表**
 - **覆盖索引**：查询列全在索引中，无需回表（Extra: Using index）
 - **最左前缀**：联合索引 (a,b,c) 可匹配 a、ab、abc，不能跳过 a 直接用 b
+
+```
+B+ 树 (聚簇索引, 叶子=完整行)        二级索引 (叶子=主键值)
+        [10|20|30]                         [name索引]
+       /    |    \                        /        \
+  [1,10][10,20][20,30]              [张三→id=5] [李四→id=8]
+      ↓ 叶子链表                         ↓ 回表: 用 id 再查聚簇索引
+  [完整行数据...]                      [完整行数据...]
+```
+
 - **三星索引**：① 扫描范围小 ② 排序与查询一致 ③ 覆盖索引不回表
 - **面试要点**：
   - 为什么 B+ 树不用 B 树：B+ 树叶子链表便于范围查询，非叶子只存 key 更矮
@@ -539,6 +758,16 @@
 
 ### Redo Log
 - **说明**：InnoDB 物理日志，记录页的修改；WAL 先写日志再写盘；环形文件，write pos 和 checkpoint
+
+```mermaid
+flowchart LR
+  U[UPDATE] --> RB[redo log buffer]
+  RB -->|事务提交| RL[redo log 磁盘\n环形文件]
+  RB --> BP[Buffer Pool 数据页]
+  BP -->|后台刷脏页| DF[.ibd 数据文件]
+  RL -->|崩溃恢复| BP
+```
+
 - **面试要点**：
   - redo log 保证持久性（崩溃恢复）；binlog 保证主从复制
   - 两阶段提交：redo prepare → binlog → redo commit
@@ -551,6 +780,19 @@
 - **说明**：多版本并发控制，快照读不加锁；通过 undo log 链 + Read View 判断可见性
 - **Read View 四属性**：creator_trx_id、trx_ids（活跃事务）、min_trx_id、max_trx_id
 - **可见性规则**：trx_id < min → 可见；trx_id ≥ max 或在 trx_ids 中 → 不可见；否则可见
+
+```
+行记录 ──→ undo log v3 ──→ undo log v2 ──→ undo log v1
+           (trx=105)        (trx=102)        (trx=100)
+
+Read View: min_trx=101, max_trx=110, active={102,105,108}
+  trx_id < 101  → 可见
+  trx_id ≥ 110  → 不可见
+  trx_id 在 active 中 → 不可见
+  否则 → 可见
+RC: 每次读新建 View | RR: 首次读创建, 之后复用
+```
+
 - **面试要点**：
   - RC 每次读生成新 Read View；RR 首次读生成，之后复用（解决不可重复读）
   - 幻读：RR + 当前读用 Next-Key Lock 防；快照读靠 MVCC
@@ -571,6 +813,21 @@
 
 ### 主从同步
 - **流程**：Master 写 binlog → Slave IO 线程拉取 → relay log → SQL 线程重放
+
+```mermaid
+sequenceDiagram
+  participant M as Master
+  participant B as binlog
+  participant S as Slave IO线程
+  participant R as relay log
+  participant Q as Slave SQL线程
+  M->>B: 写操作记录
+  S->>B: 拉取 binlog
+  S->>R: 写入 relay log
+  Q->>R: 重放 SQL
+  Q->>M: 数据同步完成
+```
+
 - **延迟优化**：并行复制、避免大事务、半同步复制、从库硬件升级
 - **面试要点**：异步复制有延迟；半同步等至少一个从库 ACK
 
@@ -582,6 +839,18 @@
 - **缓存穿透**：查不存在的数据，绕过缓存直击 DB → 布隆过滤器 / 缓存空值
 - **缓存击穿**：热点 key 过期瞬间大量请求 → 互斥锁 / 逻辑过期（不设 TTL，异步更新）
 - **缓存雪崩**：大量 key 同时过期或 Redis 宕机 → 过期时间加随机值 / 集群高可用
+
+```
+穿透: 请求 ──→ 缓存miss ──→ DB(数据本不存在) ──→ 反复打穿
+      防御: 布隆过滤器 / 缓存空值
+
+击穿: 热点key过期 ──→ 大量并发同时 miss ──→ 齐打 DB
+      防御: 互斥锁重建 / 逻辑过期(不设TTL)
+
+雪崩: 大量key同时过期 / Redis宕机 ──→ 请求涌向 DB
+      防御: TTL加随机 / 集群高可用 / 限流降级
+```
+
 - **排行榜/计数器**：ZSet / INCR
 - **共享 Session**：集中存储用户会话
 - **分布式锁**：SET NX EX + Lua 脚本释放 + Redisson 看门狗续期
@@ -765,14 +1034,44 @@
 
 ### Bean 生命周期
 - 实例化 → 属性填充 → Aware 回调 → BeanPostProcessor.before → @PostConstruct / InitializingBean → init-method → BeanPostProcessor.after → 使用 → @PreDestroy / DisposableBean → destroy-method
+
+```mermaid
+flowchart TD
+  A[实例化] --> B[属性填充]
+  B --> C[Aware 回调]
+  C --> D[BPP.before]
+  D --> E["@PostConstruct / afterPropertiesSet"]
+  E --> F[init-method]
+  F --> G[BPP.after / AOP代理]
+  G --> H[使用]
+  H --> I["@PreDestroy / destroy"]
+```
+
 - **面试要点**：
   - 循环依赖：单例 + 属性注入可通过三级缓存解决；构造器注入无法解决
-  - 三级缓存：singletonObjects → earlySingletonObjects → singletonFactories（ObjectFactory）
+  - 三级缓存：
+
+```
+① singletonObjects      成品 Bean
+② earlySingletonObjects  早期暴露(未完成初始化)
+③ singletonFactories     ObjectFactory 可生成早期引用
+
+A依赖B, B依赖A: B创建中放③ → A从③拿B早期引用 → B完成 → A完成
+```
 
 ### AOP
 - **核心概念**：切面(Aspect)、切点(Pointcut)、通知(Advice)、连接点(JoinPoint)、织入(Weaving)
 - **通知类型**：@Before、@After、@Around、@AfterReturning、@AfterThrowing
 - **实现**：JDK 动态代理（有接口）/ CGLIB（无接口，继承目标类）
+
+```
+有接口:  JDK动态代理                无接口: CGLIB
+Client → Proxy(接口)               Client → 子类(继承目标类)
+           ↓                                  ↓
+        Target                            Target
+        拦截→Advice                      拦截→Advice
+```
+
 - **面试要点**：
   - @Transactional 基于 AOP，同类内部调用不生效（未走代理）
   - CGLIB 不能代理 final 方法和类
@@ -850,9 +1149,23 @@
 ### CAP & BASE
 - **CAP**：分区容错 P 必选，C 和 A 只能二选一
 - **BASE**：基本可用、软状态、最终一致
+
+```mermaid
+flowchart TB
+  P[分区容错 P\n网络分区时必须容忍]
+  P --> C[一致性 C\n所有节点数据相同]
+  P --> A[可用性 A\n每个请求都有响应]
+  C -.互斥.- A
+  CP["CP: ZK / Etcd / Nacos临时实例"]
+  AP["AP: Eureka / Nacos AP / Redis集群"]
+  P --> CP
+  P --> AP
+```
+
 - **面试要点**：CP 系统（ZK、Etcd）；AP 系统（Nacos AP、Eureka）；实际都是 PA + 弱 C 或弱 A
 
 ### 分布式事务
+- 📖 **专题详解** → [分布式事务-2PC与3PC详解](./分布式事务-2PC与3PC详解.md)
 - **2PC**：Prepare → Commit/Rollback；缺点：阻塞、单点、数据不一致
 - **3PC**：CanCommit → PreCommit → DoCommit；增加超时减少阻塞
 - **Seata AT 模式**：一阶段业务 SQL + undo log 提交；二阶段异步删 undo log 或回滚
@@ -866,6 +1179,16 @@
 - **数据库自增**：简单，单点瓶颈
 - **号段模式**：批量取 ID（Leaf-segment、TinyId）
 - **雪花算法**：1bit符号 + 41bit时间 + 10bit机器 + 12bit序列号；趋势递增
+
+```
+雪花算法 64 bit
+┌1bit┬────── 41bit 时间戳 ──────┬─10bit 机器ID ─┬─12bit 序列号─┐
+│ 0  │ 毫秒级,约69年             │ 5datacenter   │ 4096/ms     │
+│    │                          │ +5worker      │             │
+└────┴──────────────────────────┴───────────────┴─────────────┘
+趋势递增, 适合索引 | 注意: 时钟回拨问题
+```
+
 - **面试要点**：雪花时钟回拨问题 → 等待/借用未来 ID；美团 Leaf 双 Buffer 号段
 
 ### 一致性协议
