@@ -773,6 +773,8 @@ flowchart LR
 - **面试要点**：
   - redo log 保证持久性（崩溃恢复）；binlog 保证主从复制
   - 两阶段提交：redo prepare → binlog → redo commit
+  - 批量插入：可以排序来优化插入性能。
+  - 批量更新：不需要排序
 
 ### Undo Log
 - **说明**：逻辑日志，记录反向操作；用于回滚和 MVCC 多版本
@@ -855,16 +857,21 @@ sequenceDiagram
 
 - **排行榜/计数器**：ZSet / INCR
 - **共享 Session**：集中存储用户会话
-- **分布式锁**：SET NX EX + Lua 脚本释放 + Redisson 看门狗续期
+- **分布式锁**：SET NX EX + Lua 脚本释放；生产推荐 Redisson（可重入 + 看门狗）
+- 📖 **专题详解** → [Redisson分布式锁详解](./Redisson分布式锁详解.md)（lock/tryLock、锁归属、释放、看门狗续约）
+- 📖 **专题详解** → [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md)（主从丢锁、过半加锁、RedissonRedLock、争议与选型）
 - **分布式 ID**：INCR / 雪花算法
 - **布隆过滤器**：BitMap 实现，判断元素可能存在/一定不存在
 - **GEO**：地理位置，GEORADIUS 附近的人
 - **面试要点**：穿透 vs 击穿 vs 雪崩 三者区别要能一句话说清
+- **Lua脚步**：redis执行lua脚本可以实现批量处理功能，使用lua脚本实现分布式锁
+- **面试要点**：生产环境的key的批量操作，建议使用scan命令key的批量操作生产环境建议使用scan命令-
 
 ### 数据一致性
 - **建议**：先更新 DB，再删缓存（Cache Aside）
 - **延迟双删**：删缓存 → 更新 DB → 延迟再删缓存（防脏读）
 - **面试要点**：先删后写可能脏读；先写后删可能短暂不一致，最终一致
+- **为什么不修改后立即修改缓存**：因为缓存都是查多改少，查询的条件就是redis的key，修改接口没办法很好的管理其它的查询方法，维护起来非常复杂，触发查询接口单一不会扩展和改变。
 
 ### 持久化
 - **RDB**：快照，fork 子进程写盘；恢复快但可能丢最后一次快照后的数据
@@ -885,7 +892,7 @@ sequenceDiagram
 | Set | intset / hashtable | 整数集合用 intset |
 | ZSet | ziplist / skiplist+dict | 跳表 O(logN) 范围查询 |
 
-- **面试要点**：SDS 比 C 字符串多 len/free 字段；跳表多层索引类似 B+ 树
+- **面试要点**：SDS 比 C 字符串多 len/free 字段；跳表多层索引类似 B+ 树；
 
 ### 主从 & 哨兵
 - **主从复制**：全量（RDB 快照）→ 部分（复制偏移量 + 复制缓冲区，默认 1MB）
@@ -893,10 +900,16 @@ sequenceDiagram
 - **故障转移选主**：过滤不健康 → slave-priority → 复制偏移量最大 → runid 最小
 - **脑裂**：网络分区导致多主；min-slaves-to-write 限制
 - **面试要点**：异步复制有丢数据风险；哨兵至少 3 节点防脑裂
+- 📖 **专题详解** → [Redis部署模式对比-单机哨兵集群](./Redis部署模式对比-单机哨兵集群.md)（单机/哨兵/集群优缺点、选型、注意事项）
 
 ### 集群模式
 - **说明**：16384 槽位，CRC16(key) % 16384 定位；Gossip 协议交换状态
 - **面试要点**：一致性 Hash 减少扩容迁移；MOVED/ASK 重定向
+
+## 一致性hash
+先分一定配数量的点2^n-1、这些点组成一个hash环（圆环），然后通过机器节点的信息计算出每个节点在hash环上的位置，然后操作key时，先算出key对应的hash环位置，然后顺时针找到最接近key的节点。
+![alt text](image.png)
+![alt text](image-1.png)
 
 ### 线程模型
 - **6.0 前**：单线程（命令串行，避免锁）
@@ -927,6 +940,8 @@ sequenceDiagram
 - **分布式事务**：半事务消息（RocketMQ）/ 本地消息表
 - **缓存同步**：Canal 监听 binlog → MQ → 更新 Redis
 - **面试要点**：MQ 引入后需考虑：消息丢失、重复、顺序、积压
+- 📖 **专题详解** → [三大MQ完整使用教程](./三大MQ-RocketMQ-Kafka-RabbitMQ完整使用教程.md)（RocketMQ/Kafka/RabbitMQ 生产消费代码、配置、注意事项）
+- 📖 **专题详解** → [MQ消费失败与消息积压处理](./MQ消费失败与消息积压处理.md)（重试/死信、幂等、Lag 应急与治理）
 
 ### 延迟消息
 - **RabbitMQ**：TTL + 死信队列（DLX）
@@ -975,8 +990,9 @@ sequenceDiagram
 - **零丢失**：同步发送 + 同步刷盘 + 同步复制 + 手动 ACK
 - **面试要点**：
   - NameServer 轻量注册中心（无选举）
-  - 死信队列：重试 16 次后进入 DLQ
+  - 死信队列：重试 16 次后进入 DLQ（详见 [消费失败与积压专题](./MQ消费失败与消息积压处理.md)）
   - 事务消息：Half Message → 本地事务 → Commit/Rollback → 回查
+  - 消费失败：幂等 + 有限重试 + DLQ；积压：先扩容消费者，并行度 ≤ Queue/Partition 数
 
 ---
 
@@ -1126,10 +1142,98 @@ Client → Proxy(接口)               Client → 子类(继承目标类)
 - **面试要点**：Nacos 支持 AP+CP 切换；ZK 节点多时 Watcher 性能差
 
 ### 配置中心（Nacos）
-- **动态刷新**：长轮询（1.4）/ gRPC 推送 + @RefreshScope（销毁重建 Bean）
-- **加载优先级**：profile 配置 > 默认配置 > extensionConfigs > sharedConfigs
-- **Distro 协议**：写请求路由到责任节点，读本地响应，异步同步
-- **面试要点**：@RefreshScope Bean 刷新时会销毁重建，注意状态丢失
+- **说明**：配置三要素 `dataId`（配置 ID）+ `group`（分组，默认 DEFAULT_GROUP）+ `namespace`（命名空间/租户隔离）；客户端本地缓存 + 故障时使用 snapshot 兜底
+
+#### 1.x 监听机制（HTTP 长轮询）
+- **核心接口**：`POST /nacos/v1/cs/configs/listener`（监听）+ `GET /nacos/v1/cs/configs`（拉取详情）
+- **流程**：客户端携带本地配置 **MD5 列表** 发起长轮询 → 服务端对比 MD5：
+  - 有变更 → 立即返回变更的 groupKey 列表
+  - 无变更 → Servlet AsyncContext **挂起请求**（默认 30s，实际 hang 29.5s 防超时）→ 期间变更则 `LocalDataChangeEvent` 唤醒推送
+- **客户端**：`ClientWorker` 每 10ms 检查监听列表，每 **3000 个** CacheData 一组发起长轮询；收到变更后按 dataId 拉取全量配置
+- **早期辅助**：1.x 早期有 UDP 推送加速，**不可靠仅辅助**，客户端仍以轮询为准
+
+```
+1.x 配置监听（推拉结合）
+客户端                          Nacos Server
+  │  POST /listener + MD5列表      │
+  ├──────────────────────────────→│  MD5 一致 → 挂起 29.5s
+  │                               │  MD5 不一致 → 立即返回 groupKey
+  │←──────────────────────────────┤  挂起期间变更 → 推送 groupKey
+  │  GET /configs 拉取变更项详情    │
+  ├──────────────────────────────→│
+  │←──────────────────────────────┤  返回最新配置内容
+  │  更新本地缓存，再次长轮询       │
+```
+
+#### 2.x 监听机制（gRPC 长连接）
+- **通信升级**：废弃 UDP 推送，改用 **gRPC 双向流** 长连接；一条连接多路复用心跳、查询、监听、推送
+- **流程**：启动时建立 gRPC 长连接 → 服务端配置变更后 **主动推送变更通知**（groupKey 列表）→ 客户端仅拉取**变更项**（非全量轮询）
+- **连接层**：新增 Connection Layer 统一管理连接、请求路由；集群节点间同步也改 gRPC，只同步变更部分
+- **优势**：推送延迟 **秒级 → 毫秒级**；减少 TIME_WAIT 堆积；KeepAlive 替代频繁心跳，降低 TPS
+- **兼容**：2.x Server 同时支持 gRPC（2.x 客户端）和 HTTP OpenAPI（1.x 客户端），可平滑升级
+
+```
+2.x 配置监听（长连接推送）
+客户端                          Nacos Server
+  │  建立 gRPC 双向流长连接         │
+  ├═══════════════════════════════→│  连接复用（HTTP/2 多路复用）
+  │  订阅配置 + 上报 MD5           │
+  ├──────────────────────────────→│
+  │                               │  配置变更
+  │←──────── 推送变更 groupKey ────┤  服务端主动推（无需等轮询）
+  │  仅拉取变更的配置项             │
+  ├──────────────────────────────→│
+  │←──────────────────────────────┤
+```
+
+| 维度 | 1.x | 2.x |
+|------|-----|-----|
+| 通信协议 | HTTP 1.1 长轮询 | gRPC 双向流长连接 |
+| 推送方式 | 挂起等待，变更时响应 | 服务端主动推送变更通知 |
+| 推送延迟 | 最长 30s（轮询周期） | 毫秒级 |
+| 连接模型 | 每次请求可能不同节点 | 同一客户端固定连接同一节点 |
+| 心跳 | 依赖长轮询间接保活 | KeepAlive 轻量维持 |
+| 集群同步 | HTTP | gRPC，增量同步 |
+
+#### Spring Cloud 集成
+**1.x 时代（bootstrap 模式）**：
+- 配置写在 `bootstrap.yml` / `bootstrap.properties`（优先于 application 加载）
+- 多配置：`spring.cloud.nacos.config.shared-configs`（共享）、`extension-configs`（扩展）
+- 加载优先级：profile 配置 > 默认 `${spring.application.name}` > extensionConfigs > sharedConfigs
+- 动态刷新：`@RefreshScope` + `@Value`；变更后 **销毁重建 Bean**，注意状态丢失
+
+**2.x 时代 / SCA 2023.0.1.3+（spring.config.import 模式）**：
+- `shared-configs` / `extension-configs` **已废弃**，改用 `spring.config.import`
+- `bootstrap.yml` 在 SCA **2025.1.x 起不再支持**，统一用 `application.yml`
+- 示例：
+  ```yaml
+  spring:
+    config:
+      import:
+        - nacos:application.yml?refreshEnabled=true          # 默认 group
+        - nacos:db.yml?group=DB_GROUP&refreshEnabled=true   # 指定 group
+        - optional:nacos:feature.yml?refreshEnabled=false     # 拉取失败不阻塞启动
+    cloud:
+      nacos:
+        config:
+          server-addr: 127.0.0.1:8848
+  ```
+- **refreshEnabled=true** 才会监听变更；否则仅启动时加载一次
+- 刷新链路：NacosClient 回调 → SCA 发 `RefreshEvent` → `ContextRefresher` 更新 Environment → `@RefreshScope` / `@ConfigurationProperties` Bean 重建
+- 新注解（SCA 较新版本）：`@NacosConfig`（直接注入，默认支持动态更新）、`@NacosConfigListener`（变更回调）
+
+#### 灰度发布
+- **Beta 版（IP 灰度）**：控制台发布 Beta 配置，仅指定 IP 的客户端收到灰度版本；优先级最高
+- **标签灰度（2.3.2+ Client）**：客户端设置 `nacos.config.gray.label=key=value`（properties > JVM > 环境变量），按标签匹配灰度配置，解决 IP 灰度在 K8s 下 IP 不固定的问题
+- **优先级**：IP 灰度 > 标签灰度 > 正式版；多标签灰度按 `priority` 字段排序
+- **流程**：发布灰度 → 观察监控 → 扩大标签范围 → 全量发布 / 停止灰度回滚
+
+- **面试要点**：
+  - 1.x 长轮询 = **MD5 比对 + 挂起等待**；2.x = **gRPC 长连接 + 服务端主动推**
+  - 配置变更检测靠 **MD5**，不是逐字段比较
+  - `@RefreshScope` Bean 刷新时销毁重建，有状态 Bean 慎用；`@ConfigurationProperties` 也会刷新
+  - SCA 新版本用 `spring.config.import` + `refreshEnabled=true`，别再用 bootstrap + shared-configs
+  - 2.x Server 兼容 1.x 客户端，但 2.x 客户端连 1.x Server 不可用
 
 ### 网关
 - **Gateway**：WebFlux + Netty，Route（路由）+ Predicate（断言）+ Filter（过滤器）
@@ -1356,16 +1460,18 @@ CDN / 静态资源 ──→ 减少回源
 | 缓存 | 减少 DB 压力 | 本地缓存 + Redis |
 | 异步 | 削峰、解耦 | MQ（RocketMQ/Kafka） |
 | 读写分离 | 读扩展 | MySQL 主从 |
-| 分库分表 | 写扩展 | ShardingSphere |
+| 分库分表 | 写扩展 | ShardingSphere-JDBC / Proxy |
 | 池化 | 复用昂贵资源 | 连接池、线程池 |
 | 限流降级 | 过载保护 | Sentinel、令牌桶 |
 | 无状态 | 水平扩容 | 会话存 Redis |
 
+- 📖 **专题详解** → [ShardingSphere-Sharding-JDBC详解](./ShardingSphere-Sharding-JDBC详解.md)（分片路由、绑定表/广播表、读写分离、分布式主键与事务）
 - **面试要点**：
   - 先优化单机（SQL、索引、缓存），再考虑分布式；避免过早分库分表
   - 热点数据：**本地缓存 + Redis 多级缓存**；注意一致性与穿透/击穿/雪崩
   - 写路径异步化：下单 → 发 MQ → 异步扣库存/发短信，接口快速返回
   - 幂等设计：唯一键 / Token / 状态机，防 MQ 重复消费
+  - 分库分表：查询**必须带分片键**，否则全库路由；关联表用**绑定表**避免笛卡尔积
 
 ### 高可用架构设计
 - **说明**：系统在部分组件故障时仍能提供服务；目标通常 99.9%（三个九）~ 99.99%
@@ -1405,6 +1511,11 @@ CDN / 静态资源 ──→ 减少回源
 | Java IO 模型 NIO / AIO | [Java-IO模型-NIO与AIO详解](./Java-IO模型-NIO与AIO详解.md) |
 | 零拷贝 / MMAP / DMA | [IO优化-零拷贝-MMAP-DMA详解](./IO优化-零拷贝-MMAP-DMA详解.md) |
 | DDD 四层应用架构 | [四层应用架构](./四层应用架构.md) |
+| Redisson 分布式锁 | [Redisson分布式锁详解](./Redisson分布式锁详解.md) |
+| Redis RedLock 红锁 | [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md) |
+| Redis 部署模式（单机/哨兵/集群） | [Redis部署模式对比-单机哨兵集群](./Redis部署模式对比-单机哨兵集群.md) |
+| ShardingSphere / Sharding-JDBC | [ShardingSphere-Sharding-JDBC详解](./ShardingSphere-Sharding-JDBC详解.md) |
+| MQ 消费失败与消息积压 | [MQ消费失败与消息积压处理](./MQ消费失败与消息积压处理.md) |
 
 ---
 

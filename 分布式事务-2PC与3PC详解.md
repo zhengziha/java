@@ -1,6 +1,7 @@
 # 分布式事务：2PC 与 3PC 详解
 
-> 独立专题笔记，汇总入口见 [java学习笔记汇总](./java学习笔记汇总.md)
+> 独立专题笔记，汇总入口见 [java学习笔记汇总](./java学习笔记汇总.md)  
+> 关联阅读：[ShardingSphere / Sharding-JDBC 详解](./ShardingSphere-Sharding-JDBC详解.md)（分片后的跨库事务选型）
 
 ---
 
