@@ -1,0 +1,18 @@
+[Unit]
+Description=Apache Kafka Service
+After=network.target zookeeper.service
+Requires=zookeeper.service
+
+[Service]
+Type=forking
+User=root
+Group=root
+Environment="JAVA_HOME=/usr/local/jdk1.8.0_192"
+Environment="PATH=/usr/local/jdk1.8.0_192/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/kafka/bin/kafka-server-start.sh -daemon /opt/kafka/config/server.properties
+ExecStop=/opt/kafka/bin/kafka-server-stop.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

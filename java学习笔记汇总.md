@@ -187,6 +187,14 @@ flowchart LR
   - 不用 Executors 创建：Fixed/Cached 队列或线程数无界，可能 OOM
   - IO 密集型：线程数 ≈ CPU 核数 × 2；CPU 密集型 ≈ CPU 核数 + 1
 
+### Java 21 虚拟线程
+- 📖 **专题详解** → [Java21-虚拟线程详解](./Java21-虚拟线程详解.md)
+- **说明**：虚拟线程是 Java 21 正式特性（JEP 444），由 JVM 调度到少量载体线程上运行，适合大量 **阻塞型 IO 任务**，强调“一任务一线程”的直观并发模型
+- **面试要点**：
+  - 虚拟线程擅长 **等待多、计算少** 的场景，不擅长 CPU 密集型任务
+  - 阻塞时通常会从载体线程卸载，但 **synchronized + 阻塞**、native 调用等场景可能发生 **Pinning（线程固定）**
+  - 虚拟线程不是取消连接池/限流/背压，而是降低线程成本；真正瓶颈仍可能在 DB 连接、下游 QPS、磁盘和网络
+
 ### 线程池 7 个参数
 - **说明**：corePoolSize、maximumPoolSize、keepAliveTime、unit、workQueue、threadFactory、handler
 - **面试要点**：
@@ -1509,6 +1517,7 @@ CDN / 静态资源 ──→ 减少回源
 |------|------|
 | 分布式事务 2PC / 3PC | [分布式事务-2PC与3PC详解](./分布式事务-2PC与3PC详解.md) |
 | Java IO 模型 NIO / AIO | [Java-IO模型-NIO与AIO详解](./Java-IO模型-NIO与AIO详解.md) |
+| Java 21 虚拟线程 | [Java21-虚拟线程详解](./Java21-虚拟线程详解.md) |
 | 零拷贝 / MMAP / DMA | [IO优化-零拷贝-MMAP-DMA详解](./IO优化-零拷贝-MMAP-DMA详解.md) |
 | DDD 四层应用架构 | [四层应用架构](./四层应用架构.md) |
 | Redisson 分布式锁 | [Redisson分布式锁详解](./Redisson分布式锁详解.md) |
