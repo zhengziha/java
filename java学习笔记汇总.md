@@ -866,8 +866,8 @@ sequenceDiagram
 - **排行榜/计数器**：ZSet / INCR
 - **共享 Session**：集中存储用户会话
 - **分布式锁**：SET NX EX + Lua 脚本释放；生产推荐 Redisson（可重入 + 看门狗）
-- 📖 **专题详解** → [Redisson分布式锁详解](./Redisson分布式锁详解.md)（lock/tryLock、锁归属、释放、看门狗续约）
-- 📖 **专题详解** → [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md)（主从丢锁、过半加锁、RedissonRedLock、争议与选型）
+- 📖 **专题详解** → [Redisson分布式锁详解](Redisson分布式锁详解.md)（lock/tryLock、锁归属、释放、看门狗续约）
+- 📖 **专题详解** → [Redis-RedLock红锁详解](Redis-RedLock红锁详解.md)（主从丢锁、过半加锁、RedissonRedLock、争议与选型）
 - **分布式 ID**：INCR / 雪花算法
 - **布隆过滤器**：BitMap 实现，判断元素可能存在/一定不存在
 - **GEO**：地理位置，GEORADIUS 附近的人
@@ -908,7 +908,7 @@ sequenceDiagram
 - **故障转移选主**：过滤不健康 → slave-priority → 复制偏移量最大 → runid 最小
 - **脑裂**：网络分区导致多主；min-slaves-to-write 限制
 - **面试要点**：异步复制有丢数据风险；哨兵至少 3 节点防脑裂
-- 📖 **专题详解** → [Redis部署模式对比-单机哨兵集群](./Redis部署模式对比-单机哨兵集群.md)（单机/哨兵/集群优缺点、选型、注意事项）
+- 📖 **专题详解** → [Redis部署模式对比-单机哨兵集群](Redis部署模式对比-单机哨兵集群.md)（单机/哨兵/集群优缺点、选型、注意事项）
 
 ### 集群模式
 - **说明**：16384 槽位，CRC16(key) % 16384 定位；Gossip 协议交换状态
@@ -1520,9 +1520,9 @@ CDN / 静态资源 ──→ 减少回源
 | Java 21 虚拟线程 | [Java21-虚拟线程详解](./Java21-虚拟线程详解.md) |
 | 零拷贝 / MMAP / DMA | [IO优化-零拷贝-MMAP-DMA详解](./IO优化-零拷贝-MMAP-DMA详解.md) |
 | DDD 四层应用架构 | [四层应用架构](./四层应用架构.md) |
-| Redisson 分布式锁 | [Redisson分布式锁详解](./Redisson分布式锁详解.md) |
-| Redis RedLock 红锁 | [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md) |
-| Redis 部署模式（单机/哨兵/集群） | [Redis部署模式对比-单机哨兵集群](./Redis部署模式对比-单机哨兵集群.md) |
+| Redisson 分布式锁 | [Redisson分布式锁详解](Redisson分布式锁详解.md) |
+| Redis RedLock 红锁 | [Redis-RedLock红锁详解](Redis-RedLock红锁详解.md) |
+| Redis 部署模式（单机/哨兵/集群） | [Redis部署模式对比-单机哨兵集群](Redis部署模式对比-单机哨兵集群.md) |
 | ShardingSphere / Sharding-JDBC | [ShardingSphere-Sharding-JDBC详解](./ShardingSphere-Sharding-JDBC详解.md) |
 | MQ 消费失败与消息积压 | [MQ消费失败与消息积压处理](./MQ消费失败与消息积压处理.md) |
 

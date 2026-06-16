@@ -1,6 +1,6 @@
 # Redis 部署模式对比：单机 / 哨兵 / 集群
 
-> 独立专题笔记，汇总入口见 [java学习笔记汇总](./java学习笔记汇总.md)
+> 独立专题笔记，汇总入口见 [java学习笔记汇总](java学习笔记汇总.md)
 
 ---
 
@@ -142,7 +142,7 @@ sequenceDiagram
 | 防脑裂 | `min-slaves-to-write` + `min-slaves-max-lag`：Slave 不足或延迟过大时 Master 拒绝写 |
 | 客户端 | 必须用 **Sentinel 感知客户端**，并处理 failover 后地址变化 |
 | 复制延迟 | 读 Slave 需接受最终一致；强一致读必须走 Master |
-| 分布式锁 | Redisson `RLock` 可用；RedLock **不能把同一主从里的 Master+Slave 算作两个节点**（详见 [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md)） |
+| 分布式锁 | Redisson `RLock` 可用；RedLock **不能把同一主从里的 Master+Slave 算作两个节点**（详见 [Redis-RedLock红锁详解](Redis-RedLock红锁详解.md)） |
 | 备份 | 可在 Slave 上做 RDB，减少对 Master 影响 |
 
 ### 6. 适用场景
@@ -243,7 +243,7 @@ flowchart TD
 | 数据量适中、要 HA、多 Key / 事务多 | **哨兵** |
 | 大数据量、高写 QPS、需水平扩展 | **集群** |
 | 强一致分布式锁（RedLock） | 多个**独立 Master**（通常不是 Cluster 分片） |
-| 常规分布式锁（Redisson） | 单机 / 哨兵 / 集群均可（见 [Redisson分布式锁详解](./Redisson分布式锁详解.md)） |
+| 常规分布式锁（Redisson） | 单机 / 哨兵 / 集群均可（见 [Redisson分布式锁详解](Redisson分布式锁详解.md)） |
 
 ---
 
@@ -305,6 +305,6 @@ flowchart TD
 
 | 主题 | 链接 |
 |------|------|
-| Redisson 分布式锁 | [Redisson分布式锁详解](./Redisson分布式锁详解.md) |
-| Redis RedLock 红锁 | [Redis-RedLock红锁详解](./Redis-RedLock红锁详解.md) |
-| Redis 汇总速记 | [java学习笔记汇总 - Redis](./java学习笔记汇总.md#redis) |
+| Redisson 分布式锁 | [Redisson分布式锁详解](Redisson分布式锁详解.md) |
+| Redis RedLock 红锁 | [Redis-RedLock红锁详解](Redis-RedLock红锁详解.md) |
+| Redis 汇总速记 | [java学习笔记汇总 - Redis](java学习笔记汇总.md#redis) |

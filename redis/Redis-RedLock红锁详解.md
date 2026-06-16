@@ -1,7 +1,7 @@
 # Redis RedLock（红锁）详解
 
-> 独立专题笔记，汇总入口见 [java学习笔记汇总](./java学习笔记汇总.md)  
-> 关联阅读：[Redisson 分布式锁详解](./Redisson分布式锁详解.md)（单节点 RLock、看门狗、锁归属）
+> 独立专题笔记，汇总入口见 [java学习笔记汇总](java学习笔记汇总.md)  
+> 关联阅读：[Redisson 分布式锁详解](Redisson分布式锁详解.md)（单节点 RLock、看门狗、锁归属）
 
 ---
 
@@ -411,5 +411,5 @@ Redisson
 ---
 
 > **关联阅读**  
-> - [Redisson 分布式锁详解](./Redisson分布式锁详解.md) — RLock API、看门狗、锁归属、释放流程  
-> - [java学习笔记汇总](./java学习笔记汇总.md) — Redis 缓存与分布式锁速记入口
+> - [Redisson 分布式锁详解](Redisson分布式锁详解.md) — RLock API、看门狗、锁归属、释放流程  
+> - [java学习笔记汇总](java学习笔记汇总.md) — Redis 缓存与分布式锁速记入口

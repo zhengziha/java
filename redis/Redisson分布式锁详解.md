@@ -1,6 +1,6 @@
 # Redisson 分布式锁详解
 
-> 独立专题笔记，汇总入口见 [java学习笔记汇总](./java学习笔记汇总.md)
+> 独立专题笔记，汇总入口见 [java学习笔记汇总](java学习笔记汇总.md)
 
 ---
 
@@ -337,7 +337,7 @@ RedissonClient redisson = Redisson.create(config);
 **面试要点**：
 - 看门狗是 **Redisson 进程内** 的定时任务，不是 Redis 自带功能
 - 指定 `leaseTime` 后看门狗 **一定不启用**
-- 主从切换场景下看门狗仍可能遇到锁丢失问题（详见 [Redis RedLock 红锁详解](./Redis-RedLock红锁详解.md)）
+- 主从切换场景下看门狗仍可能遇到锁丢失问题（详见 [Redis RedLock 红锁详解](Redis-RedLock红锁详解.md)）
 
 ---
 
@@ -350,7 +350,7 @@ RedissonClient redisson = Redisson.create(config);
 | 自动续期 | 需自行实现 | 看门狗 |
 | 阻塞等待 | 自旋 | Pub/Sub 唤醒 + 超时 |
 | 释放校验 | Lua 比对 value | Lua hexists + hincrby |
-| RedLock | 需自行实现 | `RedissonRedLock`（见 [红锁专题](./Redis-RedLock红锁详解.md)） |
+| RedLock | 需自行实现 | `RedissonRedLock`（见 [红锁专题](Redis-RedLock红锁详解.md)） |
 
 手写锁最小正确示例（对比理解）：
 
@@ -376,7 +376,7 @@ end
 | 公平锁 | `RFairLock` | 按请求顺序获取，吞吐低 |
 | 读锁 | `RReadWriteLock.readLock()` | 共享读 |
 | 写锁 | `RReadWriteLock.writeLock()` | 独占写 |
-| 红锁 | `RedissonRedLock` | 多独立 Master 过半加锁 → [专题详解](./Redis-RedLock红锁详解.md) |
+| 红锁 | `RedissonRedLock` | 多独立 Master 过半加锁 → [专题详解](Redis-RedLock红锁详解.md) |
 
 ---
 
@@ -425,7 +425,7 @@ public void processOrder(Long orderId) {
 | 进程宕机锁能释放吗？ | 看门狗停止续期，最多约 30s 后 Key 过期自动释放 |
 | lock 和 tryLock 怎么选？ | 必须拿到用 `lock`；可降级用 `tryLock` |
 | Redisson 比 SET NX EX 强在哪？ | 可重入、看门狗、Pub/Sub 等待、归属校验一体化 |
-| 主从切换会丢锁吗？ | 会（异步复制延迟），见 [RedLock 专题](./Redis-RedLock红锁详解.md) |
+| 主从切换会丢锁吗？ | 会（异步复制延迟），见 [RedLock 专题](Redis-RedLock红锁详解.md) |
 
 ---
 
@@ -454,5 +454,5 @@ API 选择
 ---
 
 > **关联阅读**  
-> - [Redis RedLock 红锁详解](./Redis-RedLock红锁详解.md) — 主从丢锁、过半加锁、争议与选型  
-> - [java学习笔记汇总](./java学习笔记汇总.md) — Redis 分布式锁速记入口
+> - [Redis RedLock 红锁详解](Redis-RedLock红锁详解.md) — 主从丢锁、过半加锁、争议与选型  
+> - [java学习笔记汇总](java学习笔记汇总.md) — Redis 分布式锁速记入口
