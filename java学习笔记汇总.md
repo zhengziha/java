@@ -188,7 +188,7 @@ flowchart LR
   - IO 密集型：线程数 ≈ CPU 核数 × 2；CPU 密集型 ≈ CPU 核数 + 1
 
 ### Java 21 虚拟线程
-- 📖 **专题详解** → [Java21-虚拟线程详解](./Java21-虚拟线程详解.md)
+- 📖 **专题详解** → [Java21-虚拟线程详解](Java21-虚拟线程详解.md)
 - **说明**：虚拟线程是 Java 21 正式特性（JEP 444），由 JVM 调度到少量载体线程上运行，适合大量 **阻塞型 IO 任务**，强调“一任务一线程”的直观并发模型
 - **面试要点**：
   - 虚拟线程擅长 **等待多、计算少** 的场景，不擅长 CPU 密集型任务
@@ -1280,7 +1280,7 @@ flowchart TB
 - **面试要点**：CP 系统（ZK、Etcd）；AP 系统（Nacos AP、Eureka）；实际都是 PA + 弱 C 或弱 A
 
 ### 分布式事务
-- 📖 **专题详解** → [分布式事务-2PC与3PC详解](./分布式事务-2PC与3PC详解.md)
+- 📖 **专题详解** → [分布式事务-2PC与3PC详解](分布式事务-2PC与3PC详解.md)
 - **2PC**：Prepare → Commit/Rollback；缺点：阻塞、单点、数据不一致
 - **3PC**：CanCommit → PreCommit → DoCommit；增加超时减少阻塞
 - **Seata AT 模式**：一阶段业务 SQL + undo log 提交；二阶段异步删 undo log 或回滚
@@ -1473,7 +1473,7 @@ CDN / 静态资源 ──→ 减少回源
 | 限流降级 | 过载保护 | Sentinel、令牌桶 |
 | 无状态 | 水平扩容 | 会话存 Redis |
 
-- 📖 **专题详解** → [ShardingSphere-Sharding-JDBC详解](./ShardingSphere-Sharding-JDBC详解.md)（分片路由、绑定表/广播表、读写分离、分布式主键与事务）
+- 📖 **专题详解** → [ShardingSphere-Sharding-JDBC详解](ShardingSphere-Sharding-JDBC详解.md)（分片路由、绑定表/广播表、读写分离、分布式主键与事务）
 - **面试要点**：
   - 先优化单机（SQL、索引、缓存），再考虑分布式；避免过早分库分表
   - 热点数据：**本地缓存 + Redis 多级缓存**；注意一致性与穿透/击穿/雪崩
@@ -1515,15 +1515,15 @@ CDN / 静态资源 ──→ 减少回源
 
 | 主题 | 链接 |
 |------|------|
-| 分布式事务 2PC / 3PC | [分布式事务-2PC与3PC详解](./分布式事务-2PC与3PC详解.md) |
+| 分布式事务 2PC / 3PC | [分布式事务-2PC与3PC详解](分布式事务-2PC与3PC详解.md) |
 | Java IO 模型 NIO / AIO | [Java-IO模型-NIO与AIO详解](./Java-IO模型-NIO与AIO详解.md) |
-| Java 21 虚拟线程 | [Java21-虚拟线程详解](./Java21-虚拟线程详解.md) |
+| Java 21 虚拟线程 | [Java21-虚拟线程详解](Java21-虚拟线程详解.md) |
 | 零拷贝 / MMAP / DMA | [IO优化-零拷贝-MMAP-DMA详解](./IO优化-零拷贝-MMAP-DMA详解.md) |
 | DDD 四层应用架构 | [四层应用架构](./四层应用架构.md) |
 | Redisson 分布式锁 | [Redisson分布式锁详解](Redisson分布式锁详解.md) |
 | Redis RedLock 红锁 | [Redis-RedLock红锁详解](Redis-RedLock红锁详解.md) |
 | Redis 部署模式（单机/哨兵/集群） | [Redis部署模式对比-单机哨兵集群](Redis部署模式对比-单机哨兵集群.md) |
-| ShardingSphere / Sharding-JDBC | [ShardingSphere-Sharding-JDBC详解](./ShardingSphere-Sharding-JDBC详解.md) |
+| ShardingSphere / Sharding-JDBC | [ShardingSphere-Sharding-JDBC详解](ShardingSphere-Sharding-JDBC详解.md) |
 | MQ 消费失败与消息积压 | [MQ消费失败与消息积压处理](./MQ消费失败与消息积压处理.md) |
 
 ---
