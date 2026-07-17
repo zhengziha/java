@@ -9,3 +9,4 @@ build/
 .git/
 *temp/
 demo*/
+.DS_Store
