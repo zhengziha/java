@@ -29,6 +29,12 @@
 出现比较多的是：system>const>eq_ref>ref>range>index>ALL
 一般来说，得保证查询至少达到range级别，最好能达到ref
 
+## sql优化常用技巧
+- count查询不使用框架，手写count查询，去掉不需要过滤条件的联表查询
+- 可以单独查出来的数据，不要联表去使用子查询
+- 
+
+
 ## MVCC-多版本并发控制
 MVCC 是机制，undo log实现，可以理解为MVCC是接口，undo log是实现
 
